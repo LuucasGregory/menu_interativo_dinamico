@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Experimentos Visuais • Lucas Gregory</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+:root {
+  --neon: #00ff88;
+  --neon-soft: rgba(0, 255, 136, 0.4);
+  --bg: #000;
+  --card-bg: #0a0a0a;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+}
+
+body {
+  background: radial-gradient(circle at top, #050505, #000);
+  color: white;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ===== HEADER ===== */
+header {
+  margin: 40px 0 20px;
+  text-align: center;
+}
+
+header h1 {
+  font-size: 2.2rem;
+  color: var(--neon);
+  letter-spacing: 2px;
+}
+
+header p {
+  opacity: 0.7;
+  margin-top: 10px;
+}
+
+/* ===== MENU ===== */
+.menu {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 25px;
+  width: min(1000px, 90%);
+  margin-top: 40px;
+}
+
+/* ===== CARD ===== */
+.card {
+  background: linear-gradient(145deg, #0c0c0c, #050505);
+  border: 1px solid #111;
+  border-radius: 16px;
+  padding: 25px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), var(--neon-soft), transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.card:hover::before {
+  opacity: 1;
+}
+
+.card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 0 30px rgba(0, 255, 136, 0.25);
+}
+
+.card h2 {
+  color: var(--neon);
+  margin-bottom: 10px;
+}
+
+.card p {
+  font-size: 0.95rem;
+  opacity: 0.75;
+  line-height: 1.4;
+}
+
+/* ===== FOOTER ===== */
+footer {
+  margin: 60px 0 20px;
+  opacity: 0.4;
+  font-size: 0.85rem;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>Experimentos Visuais</h1>
+  <p>HTML • CSS • JavaScript • Canvas</p>
+</header>
+
+<section class="menu">
+
+  <div class="card" data-link="arvore-fractal/arvore-fractal.html">
+    <h2>🌱 Árvore Fractal</h2>
+    <p>Crescimento orgânico, estações do ano e ciclo infinito de vida.</p>
+  </div>
+
+  <div class="card" data-link="matrix-cubo/matrix-cubo.html">
+    <h2>🟩 Matrix • Cubo 3D</h2>
+    <p>Chuva digital se reorganizando para formar um cubo tridimensional.</p>
+  </div>
+
+  <div class="card" data-link="tecido_massa-mole/tecido.html">
+    <h2>🧵 Tecido Massa-Mola</h2>
+    <p>Simulação física interativa com gravidade, vento e rasgos.</p>
+  </div>
+
+  <div class="card" data-link="tempestade_oceanica/tempestade-oceanica.html">
+    <h2>🌊 Tempestade Oceânica</h2>
+    <p>Ondas realistas, relâmpagos, chuva e um navio lutando para sobreviver.</p>
+  </div>
+
+</section>
+
+<footer>
+  © 2025 • Lucas Gregory
+</footer>
+
+<script>
+/* ===== EFEITO DE LUZ SEGUINDO O MOUSE ===== */
+document.querySelectorAll('.card').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const rect = card.getBoundingClientRect();
+    card.style.setProperty('--x', `${e.clientX - rect.left}px`);
+    card.style.setProperty('--y', `${e.clientY - rect.top}px`);
+  });
+
+  card.addEventListener('click', () => {
+    window.location.href = card.dataset.link;
+  });
+});
+</script>
+
+</body>
+</html>

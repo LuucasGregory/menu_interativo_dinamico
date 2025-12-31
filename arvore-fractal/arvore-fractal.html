@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Árvore Fractal Viva</title>
+<style>
+html, body {
+    margin: 0;
+    padding: 0;
+    background: radial-gradient(circle at bottom, #0b1220, #020409);
+    overflow: hidden;
+}
+canvas {
+    display: block;
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<script>
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+
+function resize() {
+    canvas.width = innerWidth;
+    canvas.height = innerHeight;
+}
+resize();
+addEventListener("resize", resize);
+
+// ---------------- CONFIG ----------------
+const MAX_DEPTH = 9;
+const GROW_SPEED = 0.8;
+
+// ---------------- CICLO ----------------
+const STATES = ["SEED", "GROW", "BLOOM", "FALL", "DIE"];
+let state = "SEED";
+let timer = 0;
+
+// ---------------- SEMENTE ----------------
+let seed = { x: canvas.width / 2, y: canvas.height / 2, vy: 0 };
+
+// ---------------- GALHOS ----------------
+class Branch {
+    constructor(x, y, angle, depth) {
+        this.x = x;
+        this.y = y;
+        this.angle = angle;
+        this.depth = depth;
+        this.len = 0;
+        this.maxLen = depth * 12 + 10;
+        this.children = [];
+        this.spawned = false;
+    }
+
+    grow() {
+        if (this.len < this.maxLen) {
+            this.len += GROW_SPEED;
+        } else if (!this.spawned && this.depth > 0) {
+            this.spawn();
+            this.spawned = true;
+        }
+
+        this.children.forEach(b => b.grow());
+    }
+
+    spawn() {
+        const ex = this.x + Math.cos(this.angle) * this.len;
+        const ey = this.y + Math.sin(this.angle) * this.len;
+        const spread = Math.PI / 6;
+
+        this.children.push(
+            new Branch(ex, ey, this.angle - spread, this.depth - 1),
+            new Branch(ex, ey, this.angle + spread, this.depth - 1)
+        );
+    }
+
+    draw() {
+        ctx.strokeStyle = `rgb(${80 + this.depth * 12}, ${110 + this.depth * 5}, 70)`;
+        ctx.lineWidth = Math.max(1, this.depth * 0.5);
+        ctx.beginPath();
+        ctx.moveTo(this.x, this.y);
+        ctx.lineTo(
+            this.x + Math.cos(this.angle) * this.len,
+            this.y + Math.sin(this.angle) * this.len
+        );
+        ctx.stroke();
+
+        this.children.forEach(b => b.draw());
+    }
+
+    tips(arr) {
+        if (this.children.length === 0 && this.len >= this.maxLen - 1) {
+            arr.push({
+                x: this.x + Math.cos(this.angle) * this.len,
+                y: this.y + Math.sin(this.angle) * this.len
+            });
+        }
+        this.children.forEach(b => b.tips(arr));
+    }
+}
+
+let root = null;
+
+// ---------------- FOLHAS ----------------
+let leaves = [];
+
+function spawnLeaves() {
+    leaves = [];
+    let tips = [];
+    root.tips(tips);
+    tips.forEach(t => {
+        leaves.push({
+            x: t.x,
+            y: t.y,
+            vy: Math.random() * 0.5,
+            r: 60,
+            g: 180,
+            b: 90,
+            fall: false
+        });
+    });
+}
+
+// ---------------- LOOP ----------------
+function loop() {
+    ctx.fillStyle = "rgba(5,8,15,0.25)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    timer++;
+
+    // --------- SEMENTE ---------
+    if (state === "SEED") {
+        ctx.fillStyle = "#8b6b3e";
+        ctx.beginPath();
+        ctx.arc(seed.x, seed.y, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        seed.vy += 0.15;
+        seed.y += seed.vy;
+
+        if (seed.y > canvas.height * 0.65) {
+            root = new Branch(seed.x, seed.y, -Math.PI / 2, MAX_DEPTH);
+            state = "GROW";
+            timer = 0;
+        }
+    }
+
+    // --------- CRESCIMENTO ---------
+    if (state === "GROW") {
+        root.grow();
+        root.draw();
+        if (timer > 900) {
+            spawnLeaves();
+            state = "BLOOM";
+            timer = 0;
+        }
+    }
+
+    // --------- FLORESCER ---------
+    if (state === "BLOOM") {
+        root.draw();
+        leaves.forEach(l => {
+            ctx.fillStyle = `rgb(${l.r},${l.g},${l.b})`;
+            ctx.beginPath();
+            ctx.arc(l.x, l.y, 3, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        if (timer > 400) {
+            state = "FALL";
+            timer = 0;
+        }
+    }
+
+    // --------- OUTONO ---------
+    if (state === "FALL") {
+        root.draw();
+        leaves.forEach(l => {
+            l.g += -1;
+            l.r += 1;
+            if (Math.random() < 0.02) l.fall = true;
+            if (l.fall) {
+                l.vy += 0.03;
+                l.y += l.vy;
+            }
+            ctx.fillStyle = `rgb(${l.r},${l.g},${l.b})`;
+            ctx.beginPath();
+            ctx.arc(l.x, l.y, 3, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        if (timer > 500) {
+            state = "DIE";
+            timer = 0;
+        }
+    }
+
+    // --------- MORTE ---------
+    if (state === "DIE") {
+        ctx.globalAlpha = 0.6;
+        root.draw();
+        ctx.globalAlpha = 1;
+
+        if (timer > 300) {
+            seed = { x: canvas.width / 2, y: canvas.height * 0.65, vy: -3 };
+            root = null;
+            leaves = [];
+            state = "SEED";
+            timer = 0;
+        }
+    }
+
+    requestAnimationFrame(loop);
+}
+
+loop();
+</script>
+</body>
+</html>

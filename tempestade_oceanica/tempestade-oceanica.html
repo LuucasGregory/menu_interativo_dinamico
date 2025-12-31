@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Tempestade Oceânica 2D</title>
+<style>
+    html, body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: #000;
+    }
+    canvas {
+        display: block;
+    }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<script>
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+
+function resize() {
+    canvas.width = innerWidth;
+    canvas.height = innerHeight;
+}
+window.addEventListener("resize", resize);
+resize();
+
+let t = 0;
+let lightningTimer = 0;
+let lightningAlpha = 0;
+
+const rain = [];
+const ripples = [];
+
+for (let i = 0; i < 300; i++) {
+    rain.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        speed: 6 + Math.random() * 6
+    });
+}
+
+function waveY(x, offset = 0) {
+    return (
+        Math.sin(x * 0.01 + t * 1.5 + offset) * 30 +
+        Math.sin(x * 0.005 - t + offset) * 60
+    );
+}
+
+function drawSky() {
+    ctx.fillStyle = `rgb(${20 + lightningAlpha*80}, ${20 + lightningAlpha*80}, ${40 + lightningAlpha*120})`;
+    ctx.fillRect(0, 0, canvas.width, canvas.height * 0.5);
+
+    // nuvens
+    ctx.fillStyle = `rgba(40,40,60,0.8)`;
+    for (let i = 0; i < 6; i++) {
+        ctx.beginPath();
+        ctx.ellipse(
+            (i * 300 + t * 10) % (canvas.width + 400) - 200,
+            100 + i * 20,
+            250, 80, 0, 0, Math.PI * 2
+        );
+        ctx.fill();
+    }
+}
+
+function drawLightning() {
+    if (Math.random() < 0.01) {
+        lightningAlpha = 1;
+        lightningTimer = 10;
+    }
+
+    if (lightningTimer > 0) {
+        ctx.strokeStyle = `rgba(255,255,255,${lightningAlpha})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        let x = Math.random() * canvas.width;
+        ctx.moveTo(x, 0);
+        for (let y = 0; y < canvas.height * 0.5; y += 20) {
+            x += Math.random() * 40 - 20;
+            ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        lightningTimer--;
+        lightningAlpha *= 0.8;
+    }
+}
+
+function drawOcean() {
+    ctx.beginPath();
+    ctx.moveTo(0, canvas.height);
+    for (let x = 0; x <= canvas.width; x += 10) {
+        const y = canvas.height * 0.6 + waveY(x);
+        ctx.lineTo(x, y);
+    }
+    ctx.lineTo(canvas.width, canvas.height);
+    ctx.closePath();
+
+    ctx.fillStyle = "#031d2a";
+    ctx.fill();
+}
+
+function drawShip() {
+    const shipX = canvas.width * 0.5;
+    const baseY = canvas.height * 0.6 + waveY(shipX);
+    const angle = Math.cos(t * 2) * 0.1;
+
+    ctx.save();
+    ctx.translate(shipX, baseY - 20);
+    ctx.rotate(angle);
+
+    // casco
+    ctx.fillStyle = "#4b2e1e";
+    ctx.beginPath();
+    ctx.moveTo(-30, 0);
+    ctx.lineTo(30, 0);
+    ctx.lineTo(20, 15);
+    ctx.lineTo(-20, 15);
+    ctx.closePath();
+    ctx.fill();
+
+    // mastro
+    ctx.strokeStyle = "#ccc";
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(0, -40);
+    ctx.stroke();
+
+    // vela
+    ctx.fillStyle = "#ddd";
+    ctx.beginPath();
+    ctx.moveTo(0, -40);
+    ctx.lineTo(25, -20);
+    ctx.lineTo(0, -20);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.restore();
+}
+
+function drawRain() {
+    ctx.strokeStyle = "rgba(180,180,255,0.6)";
+    ctx.lineWidth = 1;
+
+    for (let drop of rain) {
+        ctx.beginPath();
+        ctx.moveTo(drop.x, drop.y);
+        ctx.lineTo(drop.x, drop.y + 10);
+        ctx.stroke();
+
+        drop.y += drop.speed;
+        drop.x -= 1;
+
+        if (drop.y > canvas.height * 0.6) {
+            ripples.push({ x: drop.x, y: drop.y, r: 0, a: 1 });
+            drop.y = Math.random() * -200;
+            drop.x = Math.random() * canvas.width;
+        }
+    }
+}
+
+function drawRipples() {
+    for (let r of ripples) {
+        ctx.strokeStyle = `rgba(200,200,255,${r.a})`;
+        ctx.beginPath();
+        ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
+        ctx.stroke();
+        r.r += 1.5;
+        r.a -= 0.02;
+    }
+    while (ripples.length && ripples[0].a <= 0) {
+        ripples.shift();
+    }
+}
+
+function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    drawSky();
+    drawLightning();
+    drawOcean();
+    drawRipples();
+    drawShip();
+    drawRain();
+
+    t += 0.02;
+    requestAnimationFrame(animate);
+}
+
+animate();
+</script>
+</body>
+</html>

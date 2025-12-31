@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Matrix Digital Rain - Cubo 3D</title>
+<style>
+    html, body {
+        margin: 0;
+        padding: 0;
+        background: black;
+        overflow: hidden;
+    }
+    canvas {
+        display: block;
+    }
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+window.addEventListener("resize", () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+});
+
+// ===== CONFIGURAÇÕES MATRIX =====
+const chars = "アカサタナハマヤラワ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const fontSize = 16;
+const columns = Math.floor(canvas.width / fontSize);
+const drops = Array(columns).fill(0);
+
+// ===== CONFIGURAÇÕES CUBO =====
+const cubeSize = 120;
+let angle = 0;
+let cubeActive = false;
+let cubeTimer = 0;
+
+// Pontos do cubo
+const cubePoints = [
+    [-1,-1,-1], [1,-1,-1], [1,1,-1], [-1,1,-1],
+    [-1,-1, 1], [1,-1, 1], [1,1, 1], [-1,1, 1]
+];
+
+// Projeção 3D → 2D
+function project3D([x,y,z]) {
+    const scale = cubeSize / (z + 4);
+    return {
+        x: x * scale + canvas.width / 2,
+        y: y * scale + canvas.height / 2
+    };
+}
+
+// Rotação 3D
+function rotate(point, a) {
+    let [x,y,z] = point;
+
+    let cos = Math.cos(a);
+    let sin = Math.sin(a);
+
+    // Rotação Y
+    let x1 = x * cos - z * sin;
+    let z1 = x * sin + z * cos;
+
+    // Rotação X
+    let y1 = y * cos - z1 * sin;
+    let z2 = y * sin + z1 * cos;
+
+    return [x1, y1, z2];
+}
+
+// ===== DESENHO =====
+function drawMatrix() {
+    ctx.fillStyle = "rgba(0, 0, 0, 0.08)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = "#00ff66";
+    ctx.font = fontSize + "px monospace";
+
+    for (let i = 0; i < drops.length; i++) {
+        let text = chars[Math.floor(Math.random() * chars.length)];
+        let x = i * fontSize;
+        let y = drops[i] * fontSize;
+
+        // Atração para o cubo
+        if (cubeActive) {
+            const dx = x - canvas.width / 2;
+            const dy = y - canvas.height / 2;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+
+            if (dist < 200 && Math.random() < 0.05) {
+                y -= 20;
+            }
+        }
+
+        ctx.fillText(text, x, y);
+
+        if (y > canvas.height && Math.random() > 0.97) {
+            drops[i] = 0;
+        }
+        drops[i]++;
+    }
+}
+
+function drawCube() {
+    if (!cubeActive) return;
+
+    ctx.fillStyle = "#00ff99";
+    ctx.font = "14px monospace";
+
+    angle += 0.01;
+
+    cubePoints.forEach(p => {
+        let rotated = rotate(p, angle);
+        let projected = project3D(rotated);
+
+        let char = chars[Math.floor(Math.random() * chars.length)];
+        ctx.fillText(char, projected.x, projected.y);
+    });
+
+    cubeTimer++;
+    if (cubeTimer > 400) {
+        cubeActive = false;
+        cubeTimer = 0;
+    }
+}
+
+// ===== LOOP =====
+function animate() {
+    drawMatrix();
+    drawCube();
+
+    // Ativa o cubo periodicamente
+    if (Math.random() < 0.002 && !cubeActive) {
+        cubeActive = true;
+    }
+
+    requestAnimationFrame(animate);
+}
+
+animate();
+</script>
+</body>
+</html>
