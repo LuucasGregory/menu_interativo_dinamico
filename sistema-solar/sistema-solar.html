@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Sistema Solar 2D</title>
+<style>
+    html, body {
+        margin: 0;
+        padding: 0;
+        background: black;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+        color: white;
+    }
+    canvas {
+        display: block;
+    }
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resize);
+resize();
+
+const center = { x: canvas.width / 2, y: canvas.height / 2 };
+
+const sun = {
+    x: center.x,
+    y: center.y,
+    radius: 40
+};
+
+// Planetas
+const planets = [
+    { name: "Mercúrio", orbit: 80, size: 5, speed: 0.04, angle: 0, days: 0, color: "#aaa" },
+    { name: "Vênus",    orbit: 120, size: 8, speed: 0.03, angle: 0, days: 0, color: "#d2b48c" },
+    { name: "Terra",    orbit: 170, size: 9, speed: 0.02, angle: 0, days: 0, color: "#3fa9f5" },
+    { name: "Marte",    orbit: 220, size: 7, speed: 0.016, angle: 0, days: 0, color: "#c1440e" },
+    { name: "Júpiter",  orbit: 300, size: 18, speed: 0.008, angle: 0, days: 0, color: "#d9a066" },
+    { name: "Saturno",  orbit: 380, size: 15, speed: 0.006, angle: 0, days: 0, color: "#e8d9a8" },
+    { name: "Urano",    orbit: 460, size: 12, speed: 0.004, angle: 0, days: 0, color: "#7fffd4" },
+    { name: "Netuno",   orbit: 540, size: 12, speed: 0.003, angle: 0, days: 0, color: "#4169e1" }
+];
+
+function drawSun() {
+    const gradient = ctx.createRadialGradient(
+        sun.x, sun.y, 10,
+        sun.x, sun.y, sun.radius * 2
+    );
+    gradient.addColorStop(0, "#fffacd");
+    gradient.addColorStop(0.5, "#ffcc00");
+    gradient.addColorStop(1, "rgba(255, 165, 0, 0)");
+
+    ctx.beginPath();
+    ctx.fillStyle = gradient;
+    ctx.arc(sun.x, sun.y, sun.radius * 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.fillStyle = "#ffdd55";
+    ctx.arc(sun.x, sun.y, sun.radius, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+function drawOrbit(orbit) {
+    ctx.beginPath();
+    ctx.strokeStyle = "rgba(255,255,255,0.1)";
+    ctx.arc(center.x, center.y, orbit, 0, Math.PI * 2);
+    ctx.stroke();
+}
+
+function drawPlanet(p) {
+    const x = center.x + Math.cos(p.angle) * p.orbit;
+    const y = center.y + Math.sin(p.angle) * p.orbit;
+
+    // Direção da luz
+    const lx = sun.x - x;
+    const ly = sun.y - y;
+    const lightAngle = Math.atan2(ly, lx);
+
+    // Gradiente de luz
+    const grad = ctx.createRadialGradient(
+        x + Math.cos(lightAngle) * p.size * 0.3,
+        y + Math.sin(lightAngle) * p.size * 0.3,
+        p.size * 0.2,
+        x,
+        y,
+        p.size * 1.5
+    );
+
+    grad.addColorStop(0, "white");
+    grad.addColorStop(0.4, p.color);
+    grad.addColorStop(1, "black");
+
+    ctx.beginPath();
+    ctx.fillStyle = grad;
+    ctx.arc(x, y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Nome e dias
+    ctx.fillStyle = "white";
+    ctx.font = "12px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(`${p.name}`, x, y - p.size - 18);
+    ctx.fillText(`Dias: ${Math.floor(p.days)}`, x, y - p.size - 5);
+}
+
+function update() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    drawSun();
+
+    planets.forEach(p => {
+        drawOrbit(p.orbit);
+        p.angle += p.speed;
+        p.days += p.speed * 10;
+        drawPlanet(p);
+    });
+
+    requestAnimationFrame(update);
+}
+
+update();
+</script>
+
+</body>
+</html>
